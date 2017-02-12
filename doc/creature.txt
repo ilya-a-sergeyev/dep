@@ -1,0 +1,33 @@
+Пример работоспособного кода животного:
+
+Adam3.resize(28);
+
+Adam3[ 0] = Instruction(Forward, Op_Reset);						// сброс кэша и памяти
+Adam3[ 1] = Instruction(Forward, Op_Set,   { 0,0}, {-10,0});	// (0) - адрес первой инструкции самого себя относительно инструкции PUSH
+Adam3[ 2] = Instruction(Forward, Op_Nop);
+Adam3[ 3] = Instruction(Forward, Op_Rnd,   { 1,0}, {0,20});		// (1) - начальный адрес следующей копии - 1 + rand(20)
+Adam3[ 4] = Instruction(Forward, Op_Add,   { 1,0}, {0, 1});		// относительно инструкции POP
+Adam3[ 5] = Instruction(Forward, Op_Mov,   { 3,0}, {1,0});		// (3) - копия (1) будет нужна для старта ребенка
+Adam3[ 6] = Instruction(Forward, Op_Add,   { 3,0}, {-13,0});	// вносим в нее поправку - относительно инструкции START
+Adam3[ 7] = Instruction(Forward, Op_Nop);
+Adam3[ 8] = Instruction(Forward, Op_Set,   { 2,0}, {28,0});		// (2) - счетчик - длина копии
+Adam3[ 9] = Instruction(Forward, Op_Nop);
+Adam3[10] = Instruction(Forward, Op_Push,  { 0,0});				// читаем следующую инструкцию самого себя
+Adam3[11] = Instruction(Forward, Op_Nop);
+Adam3[12] = Instruction(Forward, Op_Pop,   { 1,0});				// записываем ее по адресу ребенка
+Adam3[13] = Instruction(Forward, Op_JERR,  { -13,0});			// запись не удалась - начинаем заново
+Adam3[14] = Instruction(Forward, Op_Nop);
+Adam3[15] = Instruction(Forward, Op_Nop);
+Adam3[16] = Instruction(Forward, Op_Add,   { 0,0}, { 1,0});		// инкрементируем адреса
+Adam3[17] = Instruction(Forward, Op_Nop);
+Adam3[18] = Instruction(Forward, Op_Add,   { 1,0}, { 1,0});
+Adam3[19] = Instruction(Forward, Op_Nop);
+Adam3[20] = Instruction(Forward, Op_Add,   { 2,0}, {-1,0});		// декрементируем счетчик
+Adam3[21] = Instruction(Forward, Op_Nop);
+Adam3[22] = Instruction(Forward, Op_Check, { 2,0});				// проверяем значение счетчика
+Adam3[23] = Instruction(Forward, Op_JG,    {-14,0});			// если не закончили копирование - переходим на PUSH
+Adam3[24] = Instruction(Forward, Op_Nop);
+Adam3[25] = Instruction(Forward, Op_Start, { 3,0});				// стартуем ребенка по адресу в ячейке (3)
+Adam3[26] = Instruction(Forward, Op_Nop);
+Adam3[27] = Instruction(Forward, Op_JMP,   { -27,0});			// переходим на начало
+
