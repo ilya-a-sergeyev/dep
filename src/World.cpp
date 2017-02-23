@@ -45,7 +45,7 @@ World::World(int32_t size)
     soup.reserve(worldSize*worldSize);
     for (int i=0; i<worldSize*worldSize; i++) {
         soup[i].clear();
-        soup[i].instruction.dir = static_cast<Direction>(std::rand()%4);
+        soup[i].dir = static_cast<Direction>(std::rand()%4);
     }
 
     std::srand(unsigned(std::time(0)));
@@ -53,7 +53,7 @@ World::World(int32_t size)
     Log::Not << worldSize << "x" << worldSize << " toroidal world allocated" << log4cpp::eol;
 }
 
-int World::LoadCreature(Coord point, std::vector<Instruction> &model, int32_t init_energy)
+int World::LoadCreature(Coord point, Model &model, int32_t init_energy)
 {
     Coord ptr = point;
 
@@ -61,7 +61,8 @@ int World::LoadCreature(Coord point, std::vector<Instruction> &model, int32_t in
 
     for (unsigned int i=0;i<model.size();i++) {
         Cell &tgt = getCell(ptr.x, ptr.y);
-        tgt.instruction = model[i];
+        tgt.instruction = model[i].ins;
+        tgt.dir = model[i].dir;
         newcomer->fingerprint.push_back(cellIdx(ptr.x, ptr.y));
         ptr = ptr.next(model[i].dir);
     }

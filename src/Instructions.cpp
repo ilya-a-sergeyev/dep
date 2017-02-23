@@ -4,41 +4,44 @@ std::vector<OpOptions> Instruction::opOptions;
 
 void Instruction::prepare_instructions()
 {
-    Instruction::opOptions.resize(26);
+    Instruction::opOptions.resize(static_cast<int>(Op_Last));
 
-    Instruction::opOptions[Op_None]  =  {ENERGY_COST_FAIL,          0, Ot_None};
-    Instruction::opOptions[Op_Nop]   =  {1,                         0, Ot_None};
-    Instruction::opOptions[Op_Start] =  {200,                       1, Ot_IntMemoryVector};
-    Instruction::opOptions[Op_Reset] =  {10,                        0, Ot_None};
+    Instruction::opOptions[Op_None]  =  {ENERGY_COST_FAIL,           0, Ot_None,              Ot_None};
+    Instruction::opOptions[Op_Nop]   =  {1,                          0, Ot_None,              Ot_None};
+    Instruction::opOptions[Op_Start] =  {200,                        1, Ot_IntMemoryPtr,      Ot_None};
+    Instruction::opOptions[Op_Reset] =  {10,                         0, Ot_None,              Ot_None};
 
     // вектор в ячейке внутренней памяти, адрес которой задается операндом
-    Instruction::opOptions[Op_Push ] =  {ENERGY_COST_SENSOR,        1, Ot_IntMemoryVector};
-    Instruction::opOptions[Op_Pop  ] =  {ENERGY_COST_MODIFICATOR,   2, Ot_IntMemoryVector};
+    Instruction::opOptions[Op_Push ] =  {ENERGY_COST_SENSOR,         1, Ot_IntMemoryPtr,      Ot_ConstantVector};
+    Instruction::opOptions[Op_Pop  ] =  {ENERGY_COST_MODIFICATOR,    2, Ot_IntMemoryPtr,      Ot_ConstantVector};
+
+    Instruction::opOptions[Op_GetE  ] =  {ENERGY_COST_SENSOR,        1, Ot_IntMemory,         Ot_IntMemoryPtr};
+    Instruction::opOptions[Op_SetE  ] =  {ENERGY_COST_MODIFICATOR,   1, Ot_IntMemoryPtr,      Ot_IntMemory};
 
     // операнд - константа не связанная с внешним миром
-    Instruction::opOptions[Op_CmpTop] =  {ENERGY_COST_INTERNAL,      0, Ot_Constant};
-    Instruction::opOptions[Op_Set]    =  {ENERGY_COST_INTERNAL,      0, Ot_Constant};
-    Instruction::opOptions[Op_Add]    =  {ENERGY_COST_INTERNAL,      0, Ot_Constant};
-    Instruction::opOptions[Op_Rnd]    =  {ENERGY_COST_INTERNAL,      0, Ot_Constant};
-    Instruction::opOptions[Op_Mov]    =  {ENERGY_COST_INTERNAL,      0, Ot_None};
-    Instruction::opOptions[Op_Len]    =  {ENERGY_COST_INTERNAL,      0, Ot_None};
-    Instruction::opOptions[Op_Check]  =  {ENERGY_COST_INTERNAL,      0, Ot_None};
-
-    Instruction::opOptions[Op_Mark]     =  {ENERGY_COST_INTERNAL,      0, Ot_None};
-    Instruction::opOptions[Op_Distance] =  {ENERGY_COST_INTERNAL,      0, Ot_None};
+    Instruction::opOptions[Op_CmpTop] =  {ENERGY_COST_INTERNAL,      0, Ot_IntMemory,         Ot_None};
+    Instruction::opOptions[Op_Set]    =  {ENERGY_COST_INTERNAL,      0, Ot_IntMemory,         Ot_ConstantVector};
+    Instruction::opOptions[Op_Add]    =  {ENERGY_COST_INTERNAL,      0, Ot_IntMemory,         Ot_ConstantVector};
+    Instruction::opOptions[Op_Rnd]    =  {ENERGY_COST_INTERNAL,      0, Ot_IntMemory,         Ot_ConstantVector};
+    Instruction::opOptions[Op_Mov]    =  {ENERGY_COST_INTERNAL,      0, Ot_IntMemory,         Ot_IntMemory};
+    Instruction::opOptions[Op_AddReg] =  {ENERGY_COST_INTERNAL,      0, Ot_IntMemory,         Ot_IntMemory};
+    Instruction::opOptions[Op_Len]    =  {ENERGY_COST_INTERNAL,      0, Ot_IntMemory,         Ot_None};
+    Instruction::opOptions[Op_Check]  =  {ENERGY_COST_INTERNAL,      0, Ot_IntMemory,         Ot_None};
+    Instruction::opOptions[Op_Cmp  ]  =  {ENERGY_COST_INTERNAL,      0, Ot_IntMemory,         Ot_ConstantVector};
+    Instruction::opOptions[Op_Next]  =  {ENERGY_COST_INTERNAL,       0, Ot_IntMemory,         Ot_ConstantVector};
+    Instruction::opOptions[Op_Prev]  =  {ENERGY_COST_INTERNAL,       0, Ot_IntMemory,         Ot_ConstantVector};
 
     // операнд - константный вектор во внешний мир относительно текущей ячейки
-    Instruction::opOptions[Op_JNZ]   =  {ENERGY_COST_INTERNAL,      1, Ot_ConstantVector};
-    Instruction::opOptions[Op_JZ]    =  {ENERGY_COST_INTERNAL,      1, Ot_ConstantVector};
-    Instruction::opOptions[Op_JMP]   =  {ENERGY_COST_INTERNAL,      1, Ot_ConstantVector};
-    Instruction::opOptions[Op_JERR]  =  {ENERGY_COST_INTERNAL,      1, Ot_ConstantVector};
-    Instruction::opOptions[Op_JNERR] =  {ENERGY_COST_INTERNAL,      1, Ot_ConstantVector};
-    Instruction::opOptions[Op_JNG]   =  {ENERGY_COST_INTERNAL,      1, Ot_ConstantVector};
-    Instruction::opOptions[Op_JG]    =  {ENERGY_COST_INTERNAL,      1, Ot_ConstantVector};
-    Instruction::opOptions[Op_JNL]   =  {ENERGY_COST_INTERNAL,      1, Ot_ConstantVector};
-    Instruction::opOptions[Op_JL]    =  {ENERGY_COST_INTERNAL,      1, Ot_ConstantVector};
-    Instruction::opOptions[Op_JEQ]   =  {ENERGY_COST_INTERNAL,      1, Ot_ConstantVector};
-    Instruction::opOptions[Op_JNE]   =  {ENERGY_COST_INTERNAL,      1, Ot_ConstantVector};
+    Instruction::opOptions[Op_Begin]         =  {ENERGY_COST_INTERNAL,       1, Ot_None,   Ot_None};
+    Instruction::opOptions[Op_BreakOnErr]    =  {ENERGY_COST_INTERNAL,       1, Ot_None,   Ot_None};
+    Instruction::opOptions[Op_ContinueOnErr] =  {ENERGY_COST_INTERNAL,       1, Ot_None,   Ot_None};
+    Instruction::opOptions[Op_BreakOnZ]      =  {ENERGY_COST_INTERNAL,       1, Ot_None,   Ot_None};
+    Instruction::opOptions[Op_ContinueOnZ]   =  {ENERGY_COST_INTERNAL,       1, Ot_None,   Ot_None};
+    Instruction::opOptions[Op_BreakOnG]      =  {ENERGY_COST_INTERNAL,       1, Ot_None,   Ot_None};
+    Instruction::opOptions[Op_ContinueOnG]   =  {ENERGY_COST_INTERNAL,       1, Ot_None,   Ot_None};
+    Instruction::opOptions[Op_BreakOnL]      =  {ENERGY_COST_INTERNAL,       1, Ot_None,   Ot_None};
+    Instruction::opOptions[Op_ContinueOnL]   =  {ENERGY_COST_INTERNAL,       1, Ot_None,   Ot_None};
+    Instruction::opOptions[Op_End]           =  {ENERGY_COST_INTERNAL,       1, Ot_None,   Ot_None};
 
 
     Log::Not <<  "Prepared " << Instruction::opOptions.size() << " types of instructions\n";
@@ -49,22 +52,28 @@ OpOptions Instruction::options()
     return opOptions[code%Instruction::opOptions.size()];
 }
 
-uint64_t Instruction::cost(Creature *crt, bool condition)
+uint64_t Instruction::cost(Cell &cell, Creature &crt, bool condition)
 {
-    World *theWorld = World::getInstance();
+    //World *theWorld = World::getInstance();
 
     OpOptions opt = options();
     uint64_t ee = opt.baseCost;
 
+    // constant address
     if (opt.targetOpType == Ot_ConstantVector && condition) {
-        Cell &cell = theWorld->getCell(crt->ptr);
         Coord vect = cell.instruction.arg1;
         ee += opt.lengthMul*vect.length();
     }
-    else if (opt.targetOpType == Ot_IntMemoryVector && condition) {
-        Cell &cell = theWorld->getCell(crt->ptr);
-        Coord vect = crt->internal_memory[cell.instruction.arg1.x];
-        ee += opt.lengthMul*vect.length();
+    // address from internal memory
+    else {
+        if (opt.targetOpType == Ot_IntMemoryPtr && condition) {
+            Coord vect = crt.internal_memory[cell.instruction.arg1.x];
+            ee += opt.lengthMul*vect.length();
+        }
+        if (opt.sourceOpType == Ot_IntMemoryPtr && condition) {
+            Coord vect = crt.internal_memory[cell.instruction.arg2.x];
+            ee += opt.lengthMul*vect.length();
+        }
     }
 
     return ee;
@@ -76,7 +85,6 @@ Instruction& Instruction::operator=(const Instruction& src)
 		return *this;
 	}
 	code = src.code;
-	dir = src.dir;
 	arg1 = src.arg1;
 	arg2 = src.arg2;
 	return *this;	
@@ -123,6 +131,24 @@ std::string Instruction::name(Creature *crt, Cell &cell)
             op_name.append(std::to_string(cell.instruction.arg1.y));
             break;
         }
+        case Op_GetE:{
+            op_name =  "GETE (";
+            op_name.append(std::to_string(cell.instruction.arg1.x));
+            op_name.append(") <- ");
+            op_name.append(std::to_string(cell.instruction.arg2.x));
+            op_name.append(":");
+            op_name.append(std::to_string(cell.instruction.arg2.y));
+            break;
+        }
+        case Op_SetE:{
+            op_name =  "SETE (";
+            op_name.append(std::to_string(cell.instruction.arg1.x));
+            op_name.append(":");
+            op_name.append(std::to_string(cell.instruction.arg1.y));
+            op_name.append(") <- ");
+            op_name.append(std::to_string(cell.instruction.arg2.x));
+            break;
+        }
         case Op_CmpTop:{
             op_name =  "CMPTOP ";
             op_name.append(std::to_string(cell.instruction.arg1.x));
@@ -146,6 +172,23 @@ std::string Instruction::name(Creature *crt, Cell &cell)
             op_name.append(std::to_string(cell.instruction.arg2.y));
             break;
         }
+        case Op_Cmp:{
+            op_name =  "CMP (";
+            op_name.append(std::to_string(cell.instruction.arg1.x));
+            op_name.append(") with ");
+            op_name.append(std::to_string(cell.instruction.arg2.x));
+            op_name.append(":");
+            op_name.append(std::to_string(cell.instruction.arg2.y));
+            break;
+        }
+        case Op_AddReg:{
+            op_name =  "ADD (";
+            op_name.append(std::to_string(cell.instruction.arg1.x));
+            op_name.append(") += (");
+            op_name.append(std::to_string(cell.instruction.arg2.x));
+            op_name.append(")");
+            break;
+        }
         case Op_Mov:{
             op_name =  "MOV (";
             op_name.append(std::to_string(cell.instruction.arg1.x));
@@ -159,81 +202,14 @@ std::string Instruction::name(Creature *crt, Cell &cell)
             op_name.append(std::to_string(cell.instruction.arg1.x));
             break;
         }
-        case Op_JNZ: {
-            op_name =  "JNZ ";
+        case Op_Next:{
+            op_name =  "NEXT ";
             op_name.append(std::to_string(cell.instruction.arg1.x));
-            op_name.append(":");
-            op_name.append(std::to_string(cell.instruction.arg1.y));
             break;
         }
-        case Op_JZ: {
-            op_name =  "JZ ";
+        case Op_Prev:{
+            op_name =  "PREV ";
             op_name.append(std::to_string(cell.instruction.arg1.x));
-            op_name.append(":");
-            op_name.append(std::to_string(cell.instruction.arg1.y));
-            break;
-        }
-        case Op_JNL: {
-            op_name =  "JNL ";
-            op_name.append(std::to_string(cell.instruction.arg1.x));
-            op_name.append(":");
-            op_name.append(std::to_string(cell.instruction.arg1.y));
-            break;
-        }
-        case Op_JL: {
-            op_name =  "JL ";
-            op_name.append(std::to_string(cell.instruction.arg1.x));
-            op_name.append(":");
-            op_name.append(std::to_string(cell.instruction.arg1.y));
-            break;
-        }
-        case Op_JNG: {
-            op_name =  "JNG ";
-            op_name.append(std::to_string(cell.instruction.arg1.x));
-            op_name.append(":");
-            op_name.append(std::to_string(cell.instruction.arg1.y));
-            break;
-        }
-        case Op_JG: {
-            op_name =  "JG ";
-            op_name.append(std::to_string(cell.instruction.arg1.x));
-            op_name.append(":");
-            op_name.append(std::to_string(cell.instruction.arg1.y));
-            break;
-        }
-        case Op_JEQ: {
-            op_name =  "JEQ ";
-            op_name.append(std::to_string(cell.instruction.arg1.x));
-            op_name.append(":");
-            op_name.append(std::to_string(cell.instruction.arg1.y));
-            break;
-        }
-        case Op_JNE: {
-            op_name =  "JNE ";
-            op_name.append(std::to_string(cell.instruction.arg1.x));
-            op_name.append(":");
-            op_name.append(std::to_string(cell.instruction.arg1.y));
-            break;
-        }
-        case Op_JNERR: {
-            op_name =  "JNERR ";
-            op_name.append(std::to_string(cell.instruction.arg1.x));
-            op_name.append(":");
-            op_name.append(std::to_string(cell.instruction.arg1.y));
-            break;
-        }
-        case Op_JERR: {
-            op_name =  "JERR ";
-            op_name.append(std::to_string(cell.instruction.arg1.x));
-            op_name.append(":");
-            op_name.append(std::to_string(cell.instruction.arg1.y));
-            break;
-        }
-        case Op_JMP: {
-            op_name =  "JMP ";
-            op_name.append(std::to_string(cell.instruction.arg1.x));
-            op_name.append(":");
-            op_name.append(std::to_string(cell.instruction.arg1.y));
             break;
         }
         case Op_Rnd: {
@@ -251,16 +227,48 @@ std::string Instruction::name(Creature *crt, Cell &cell)
             op_name.append(")");
             break;
         }
-        case Op_Mark: {
-            op_name =  "MARK";
+
+        case Op_Begin: {
+            op_name =  "BEGIN";
             break;
         }
-        case Op_Distance: {
-            op_name =  "DISTANCE (";
-            op_name.append(std::to_string(cell.instruction.arg1.x));
-            op_name.append(")");
+        case Op_BreakOnErr: {
+            op_name =  "BREAKONERR";
             break;
         }
+        case Op_ContinueOnErr: {
+            op_name =  "CONTINUEONERR";
+            break;
+        }
+        case Op_BreakOnZ: {
+            op_name =  "BREAKONZ";
+            break;
+        }
+        case Op_ContinueOnZ: {
+            op_name =  "CONTINUEONZ";
+            break;
+        }
+        case Op_BreakOnG: {
+            op_name =  "BREAKONG";
+            break;
+        }
+        case Op_ContinueOnG: {
+            op_name =  "CONTINUEONG";
+            break;
+        }
+        case Op_BreakOnL: {
+            op_name =  "BREAKONL";
+            break;
+        }
+        case Op_ContinueOnL: {
+            op_name =  "CONTINUEONL";
+            break;
+        }
+        case Op_End: {
+            op_name =  "END";
+            break;
+        }
+
     }
     return op_name;
 }

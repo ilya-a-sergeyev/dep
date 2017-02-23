@@ -10,6 +10,7 @@ public:
 
     Instruction		instruction;
     int64_t         energy;
+    Direction       dir;
 	
     Cell();
     Cell(const Cell &src);
@@ -18,6 +19,12 @@ public:
 
     void clear();
     int64_t takeEnergy();
+
+    std::string instruction_name(Creature *crt)
+    {
+        return instruction.name(crt, *this);
+    }
+
 };
 
 #endif

@@ -146,8 +146,10 @@ Coord::Coord()
 
 Coord::Coord(int32_t nx, int32_t ny)
 {
-    x=nx%World::worldSize;
-    y=ny%World::worldSize;
+    //x=nx%World::worldSize;
+    //y=ny%World::worldSize;
+    x=nx;
+    y=ny;
 }
 
 Coord& Coord::operator=(const Coord& src)
@@ -207,5 +209,49 @@ unsigned Coord::length()
         return std::abs(y);
     }
     return sqrt_newton(x*x+y*y);
+}
+
+void Coord::inc(Direction dir)
+{
+    switch (dir) {
+        case Forward: {
+            x++;
+            break;
+        }
+        case Back:{
+            x--;
+            break;
+        }
+        case Left:{
+            y--;
+            break;
+        }
+        case Right:{
+            y++;
+            break;
+        }
+    }
+}
+
+void Coord::dec(Direction dir)
+{
+    switch (dir) {
+        case Forward: {
+            x--;
+            break;
+        }
+        case Back:{
+            x++;
+            break;
+        }
+        case Left:{
+            y++;
+            break;
+        }
+        case Right:{
+            y--;
+            break;
+        }
+    }
 }
 

@@ -22,6 +22,30 @@ struct Step {
     Step(Coord _pos, Instruction _ins):pos(_pos),instruction(_ins) {}
 };
 
+class CallStack:public std::stack<Coord>
+{
+    public:
+        Coord get_top_by_idx(unsigned int idx)
+        {
+            Coord tmp = top();
+            if (!idx) {
+                return tmp;
+            }
+            if (size()) {
+                pop();
+                Coord tmp2  = get_top_by_idx(idx-1);
+                push(tmp);
+                return tmp2;
+            }
+            return tmp;
+        }
+
+        Coord operator [](unsigned int idx)
+        {
+            return get_top_by_idx(idx);
+        }
+};
+
 typedef std::vector<unsigned long> Fingerprint;
 
 class Creature {
@@ -42,7 +66,7 @@ public:
     // стек и память виртуальной машины индивидуальны для каждого существа
 	std::stack<Cell>	internal_stack;
 	Coord				internal_memory[InternalMemoryCapacity];
-    std::stack<Coord>	points;
+    CallStack       	points;
 
     // отпечаток жизни существа - для статистики и подчистки территории после его смерти
     long int            lifetime;
@@ -52,22 +76,20 @@ public:
     // при смерти родителя до старта ребенка
     Fingerprint         embrion;
 
-    //
-    // поправка на мутации вставки/удаления
-    // если вектор перехода операции указывает на точку "за" сохраненной точкой мутации
-    // то в записываемый вектор вносится указанная поправка
-    // при повторном проходе точки мутации поправка обнуляется
-    //
-    Coord       m_adjust;
-    Coord       m_pos;
+    // флаг произошедшей мутации (ограничиваем 1 на проход)
     bool        m_flag;
 
     Creature(Coord entryPoint, int64_t energy);
     ~Creature();
 
     void execInstruction();
-    void applyPop(Coord &targetCoord, Cell &target, Instruction &value);
+    void applyPop(Coord &targetCoord, Cell &target, Instruction &value, const Direction dir);
     void doAbort();
+
+    void moveBy(int32_t steps);
+    void setFlags(int32_t value);
+    bool jumpToBegin();
+    bool jumpToEnd();
 
     void print();
 

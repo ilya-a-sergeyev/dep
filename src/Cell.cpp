@@ -23,7 +23,8 @@ int64_t Cell::takeEnergy()
 Cell::Cell()
 {
     instruction.code = Op_None;
-    instruction.dir = static_cast<Direction>(std::rand()%4);
+    //instruction.dir = static_cast<Direction>(std::rand()%4);
+    dir = static_cast<Direction>(std::rand()%4);
     energy = INIT_CELL_ENERGY;
     tailId = 0;
     executorId = 0;

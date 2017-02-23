@@ -11,6 +11,13 @@
 #include "Cell.h"
 #include "Log.h"
 
+struct ModelCell {
+    Direction   dir;
+    Instruction ins;
+};
+
+typedef std::vector<ModelCell> Model;
+
 class World {
 protected:
     std::vector<Cell>                           soup;
@@ -27,7 +34,7 @@ public:
     Cell &getCell(uint32_t x, uint32_t y);
 
     // loads the creature into the world
-    int LoadCreature(Coord point, std::vector<Instruction> &creature, int32_t init_energy);
+    int LoadCreature(Coord point, Model &creature, int32_t init_energy);
 
     // one step of creature
     int execInstruction(Creature *crt);

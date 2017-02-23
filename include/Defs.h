@@ -14,8 +14,13 @@
 
 // normal copies/mutated copies
 // less mean more mutations level
-#define MUTATIONS_LEVEL_INSERT  50
-#define MUTATIONS_LEVEL_DELETE  10
-#define MUTATIONS_LEVEL         200
+#define MUTATIONS_LEVEL_INSERT   50
+#define MUTATIONS_LEVEL_DELETE   10
+#define MUTATIONS_LEVEL          200
+
+#define MUTATIONS_LEVEL_CONSTANT 50
+#define MUTATIONS_CONSTANT_MAXD  10
+
+#define MUTATIONS_LEVEL_DIRECTION 50
 
 #endif

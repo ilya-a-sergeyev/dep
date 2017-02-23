@@ -61,180 +61,128 @@ void Creature::doAbort()
     }
 }
 
+#define MUTATIONS_OFF 0
+
 //
 // Place of mutations
 //
-void Creature::applyPop(Coord &targetCoord, Cell &target, Instruction &value)
+void Creature::applyPop(Coord &targetCoord, Cell &target, Instruction &value, const Direction src_dir)
 {
     World *theWorld = World::getInstance();
+    Direction tgt_dir = src_dir;
 
     // мутация-удаление
-    if (!m_flag) {
+    do {
+        // частота мутаций относительно количества выполненных инструкций
+        if (std::rand()%MUTATIONS_LEVEL_DELETE != 0 || MUTATIONS_OFF || m_flag) {
+            break;
+        }
 
-        do {
-            //counter1++;
-            //if (counter1%18 != 0)
-            //    break;
+        // пока только пустышки
+        if (value.code == Op_Nop) {
 
-            // частота мутаций относительно количества выполненных инструкций
-            if (std::rand()%MUTATIONS_LEVEL_DELETE != 0) {
-                break;
-            }
-
-            // пока только пустышки
-            if (value.code == Op_Nop) {
-
-                m_flag = true;
-
-                // корректируем указатель на цель, чтобы дальнейшее копирование выполнялось корректно
-                Cell  &cell = theWorld->getCell(ptr);
-                Coord &vect = internal_memory[cell.instruction.arg1.x];
-                vect = vect.prev(value.dir);
-
-                switch (value.dir) {
-                    case Forward: {
-                        m_adjust.x = -1;
-                        m_adjust.y = 0;
-                        break;
-                    }
-                    case Back:{
-                        m_adjust.x = 1;
-                        m_adjust.y = 0;
-                        break;
-                    }
-                    case Left:{
-                        m_adjust.x = 0;
-                        m_adjust.y = 1;
-                        break;
-                    }
-                    case Right:{
-                        m_adjust.x = 0;
-                        m_adjust.y = -1;
-                        break;
-                    }
-                }
-
-                m_pos = ptr.add(vect);
-                Log::Not
-                    << "CRT " << Id << " <<Op deleted in [" << m_pos.x << ":" << m_pos.y << "]"
-                    << " adjust " << m_adjust.x << ":" << m_adjust.y << ">>" << log4cpp::eol;
-
-                return;
-            }
-
-        } while (0);
-    }
-
-    // копирование операции
-    target.instruction = value;
-    target.tailId = Id;
-    target.executorId = 0;
-    embrion.push_back(theWorld->cellIdx(targetCoord.x, targetCoord.y));
-
-
-    // мутация-добавление
-    if (!m_flag) {
-        do {
-
-            //counter2++;
-            //*p_log_root << log4cpp::Priority::INFO << "CRT " << Id << " COUNTER " << counter2;
-            //if (counter2%6 != 0)
-            //    break;
-
-            // частота мутаций относительно количества выполненных инструкций
-            if (std::rand()%MUTATIONS_LEVEL_INSERT != 0) {
-                break;
-            }
-
-            // insert one instruction after current
             m_flag = true;
 
             // корректируем указатель на цель, чтобы дальнейшее копирование выполнялось корректно
             Cell  &cell = theWorld->getCell(ptr);
             Coord &vect = internal_memory[cell.instruction.arg1.x];
-            vect = vect.next(value.dir);
-
-            switch (value.dir) {
-                case Forward: {
-                    m_adjust.x = 1;
-                    m_adjust.y = 0;
-                    break;
-                }
-                case Back:{
-                    m_adjust.x = -1;
-                    m_adjust.y = 0;
-                    break;
-                }
-                case Left:{
-                    m_adjust.x = 0;
-                    m_adjust.y = -1;
-                    break;
-                }
-                case Right:{
-                    m_adjust.x = 0;
-                    m_adjust.y = 1;
-                    break;
-                }
-            }
+            vect = vect.prev(src_dir);
 
             Coord to = ptr.add(vect);
-            Cell &targetCell = theWorld->getCell(to);
-            targetCell.instruction.code = Op_Nop;
-            targetCell.instruction.dir = target.instruction.dir;
-            targetCell.tailId = Id;
-
-            embrion.push_back(theWorld->cellIdx(to.x, to.y));
-
-            m_pos = to;
-            Log::Not << "CRT " << Id << " <<Nop inserted into [" << m_pos.x << ":" << m_pos.y << "]>>" << log4cpp::eol;
-
-            return;
-
-        } while (0);
-    }
-
-    if (m_flag) {
-
-        // новое копирование (тип операции - плохой признак, но хоть что-то)
-        // обнуляем данные мутации
-        if (value.code == Op_Reset) {
-            Log::Not << " <<Reset mutation data>>" << log4cpp::eol;
-            m_flag = false;
-            m_pos.x = 0;
-            m_pos.y = 0;
-            m_adjust.x = 0;
-            m_adjust.y = 0;
-        }
-
-        // правки касаются только переходов
-        OpOptions opt = value.options();
-        if (opt.targetOpType != Ot_ConstantVector) {
+            Log::Not << "CRT " << Id << " <<Op deleted in [" << to.x << ":" << to.y << "]" << log4cpp::eol;
             return;
         }
 
-        // вектор указывающий на точку изменения
-        Coord delta = m_pos.add_raw(-targetCoord.x, -targetCoord.y);
+    } while (0);
 
-        Log::Not << "CRT " << Id << " <<Found jump vector " << value.arg1.x << ":" << value.arg1.y << ">>" << log4cpp::eol;
+    // мутация-смена направления выполнения кода
+    do {
+        if (std::rand()%MUTATIONS_LEVEL_DIRECTION != 0  || MUTATIONS_OFF || m_flag) {
+            break;
+        }
+        switch (src_dir) {
+        case Forward:
+            tgt_dir = Right;
+            break;
+        case Right:
+            tgt_dir = Back;
+            break;
+        case Back:
+            tgt_dir = Left;
+            break;
+        case Left:
+            tgt_dir = Forward;
+            break;
+        }
+        Log::Not << "CRT " << Id << " Direction of [" << targetCoord.x << ":" << targetCoord.y
+                 << "] changed from " << static_cast<int>(src_dir) << " to "
+                 << static_cast<int>(tgt_dir) << log4cpp::eol;
+        m_flag = true;
+    }
+    while (1);
 
-        // если вектор этой операции указывает на точку "через голову" сохраненной позиции мутации
-        // хотя бы по одному из имерений - вносим в него поправку
-        if ((delta.x<0 && value.arg1.x<0 && value.arg1.x<=delta.x) ||
-            (delta.x>0 && value.arg1.x>0 && value.arg1.x>=delta.x) ||
-            (delta.y<0 && value.arg1.y<0 && value.arg1.y<=delta.y) ||
-            (delta.y>0 && value.arg1.y>0 && value.arg1.y>=delta.y))
-        {
 
-            Coord newValue = value.arg1.add_raw(-m_adjust.x,-m_adjust.y);
+    // копирование операции
+    target.instruction = value;
+    target.tailId = Id;
+    target.executorId = 0;
+    target.dir = tgt_dir;
+    embrion.push_back(theWorld->cellIdx(targetCoord.x, targetCoord.y));
+    OpOptions opt = value.options();
 
-            Log::Not
-                << "CRT " << Id << " <<Jump with vector " << value.arg1.x << ":" << value.arg1.y
-                << " ajusted with " << m_adjust.x << ":" << m_adjust.y << " into " << newValue.x << ":" << newValue.y << ">>" << log4cpp::eol;
+    // мутация-корректировка констант
+    do {
+        break;
 
-            value.arg1 = newValue;
-            target.instruction = value;
+        if (std::rand()%MUTATIONS_LEVEL_CONSTANT != 0  || MUTATIONS_OFF || m_flag) {
+            break;
+        }
+        if (opt.sourceOpType == Ot_ConstantVector) {
+            Coord delta;
+            if (value.arg2.x) {
+                delta.x = std::rand()%MUTATIONS_CONSTANT_MAXD;
+            }
+            if (value.arg2.y) {
+                delta.y = std::rand()%MUTATIONS_CONSTANT_MAXD;
+            }
+            value.arg2 = value.arg2.add_raw(delta);
+            m_flag = true;
         }
     }
+    while (1);
+
+    // мутация-добавление
+    do {
+        // частота мутаций относительно количества выполненных инструкций
+
+        if (std::rand()%MUTATIONS_LEVEL_INSERT != 0 || MUTATIONS_OFF || m_flag) {
+            break;
+        }
+
+        // insert one instruction after current
+        m_flag = true;
+
+        // корректируем указатель на цель, чтобы дальнейшее копирование выполнялось корректно
+        Cell  &cell = theWorld->getCell(ptr);
+        Coord &vect = internal_memory[cell.instruction.arg1.x];
+        vect = vect.next(tgt_dir);
+
+        // вставляем еще одну инструкцию
+        //Coord to = ptr.add(vect);
+        Coord to = targetCoord.next(tgt_dir);
+        Cell &targetCell = theWorld->getCell(to);
+        targetCell.instruction.code = Op_Nop;
+        targetCell.tailId = Id;
+        targetCell.executorId = 0;
+        targetCell.dir = tgt_dir;
+        embrion.push_back(theWorld->cellIdx(to.x, to.y));
+
+        Log::Not << "CRT " << Id << " <<Nop inserted into [" << to.x << ":" << to.y << "]>>" << log4cpp::eol;
+
+        return;
+
+    } while (0);
+
 }
 
 void Creature::execInstruction()
@@ -249,24 +197,30 @@ void Creature::execInstruction()
     cell.executorId = Id;
     lifetime++;
 
-    Log::Inf << "CRT " << Id << "\t" << ptr.x << ":" << ptr.y << "\tE " << energy << "\tFL " << flags << "\t";
+    Log::Inf << "CRT " << Id << "\t"
+             << ptr.x << ":" << ptr.y
+             << " ST " << points.size()
+             << "\tE " << energy
+             << "\tFL "
+             << ((flags&CRT_FLAG_ERR)?"E":"_")
+             << ((flags&CRT_FLAG_Z)?"Z":"_")
+             << ((flags&CRT_FLAG_GREATER)?"G":"_")
+             << ((flags&CRT_FLAG_LESS)?"L":"_")
+             << "\t";
 
     switch (instruction.code) {
 
     case Op_Nop: {
-        Log::Inf << "NOP\t";
+        Log::Inf << "NOP\t\t";
         simpleDirection = true;
         break;
     }
 
     case Op_Reset:{
-        Log::Inf << "RESET\t";
+        Log::Inf << "RESET\t\t";
 
         while (internal_stack.size()) {
             internal_stack.pop();
-        }
-        while (points.size()) {
-            points.pop();
         }
 
         doAbort();
@@ -274,10 +228,6 @@ void Creature::execInstruction()
         if (m_flag) {
             Log::Inf << " <<Reset mutation data>>";
             m_flag = false;
-            m_pos.x = 0;
-            m_pos.y = 0;
-            m_adjust.x = 0;
-            m_adjust.y = 0;
         }
 
         child_energy = 0;
@@ -285,10 +235,23 @@ void Creature::execInstruction()
         simpleDirection = true;
         break;
     }
+
     case Op_Start:{
-        Log::Inf << "START\t" << instruction.arg1.x << ":" << instruction.arg1.y;
+        simpleDirection = true;
+        Log::Inf << "START\t\t" << instruction.arg1.x << ":" << instruction.arg1.y;
+
         Coord vect = internal_memory[instruction.arg1.x];
-        Coord childEntry = ptr.add(vect);
+        int     idx = instruction.arg2.x;
+
+        if (points.size()<idx+1) {
+            flags |= CRT_FLAG_ERR;
+            Log::Inf << " failed (call stack size " << points.size() << ", idx " << idx << ")";
+            break;
+        }
+
+        Coord base = points[idx];
+        Coord childEntry = base.add(vect);
+
         Log::Inf << " [" << childEntry.x << ":" << childEntry.y << "]";
 
         if (entry == childEntry || child_energy <= 0) {
@@ -310,27 +273,45 @@ void Creature::execInstruction()
             considerTheDistance = true;
         }
         embrion.clear();
-        simpleDirection = true;
         break;
     }
 
     case Op_Push:{
+        simpleDirection = true;
         Coord   vect = internal_memory[instruction.arg1.x];
-        Coord   from = ptr.add(vect);
-        Log::Inf << "PUSH\t <-(" << instruction.arg1.x << ") " << vect.x << ":" << vect.y << "";
-        Log::Inf << " [" << from.x << ":" << from.y << "]";// <- " << source.instruction.name(crt, source);
+        int     idx = instruction.arg2.x;
+        Log::Inf << "PUSH\t\t <- (" << instruction.arg1.x << ") " << vect.x << ":" << vect.y << "";
+
+        if (points.size()<idx+1) {
+            flags |= CRT_FLAG_ERR;
+            Log::Inf << " failed (call stack size " << points.size() << ", idx " << idx << ")";
+            break;
+        }
+        Coord base = points[idx];
+        Coord from = base.add(vect);
+
+        Log::Inf << " [" << from.x << ":" << from.y << "]";
         Cell &source = theWorld->getCell(from);
         internal_stack.push(source);
+        internal_memory[instruction.arg1.x].inc(source.dir);
         considerTheDistance = true;
-        simpleDirection = true;
         break;
     }
     case Op_Pop:{
         Coord   vect = internal_memory[instruction.arg1.x];
-        Log::Inf << "POP\t ->(" << instruction.arg1.x << ") " << vect.x << ":" << vect.y << "";
-        Coord   to = ptr.add(vect);
+        int     idx = instruction.arg2.x;
+        Log::Inf << "POP\t\t -> (" << instruction.arg1.x << ") " << vect.x << ":" << vect.y << "";
+
+        if (points.size()<idx+1) {
+            flags |= CRT_FLAG_ERR;
+            Log::Inf << " failed (call stack size " << points.size() << ", idx " << idx << ")";
+            break;
+        }
+        Coord base = points[idx];
+        Coord to = base.add(vect);
 
         simpleDirection = true;
+        considerTheDistance = true;
 
         if (!internal_stack.size()) {
             flags |= CRT_FLAG_ERR;
@@ -353,17 +334,74 @@ void Creature::execInstruction()
         child_energy += target.takeEnergy();
 
         flags &= (~CRT_FLAG_ERR);
-        considerTheDistance = true;
 
         // записываем туда что-то
-        applyPop(to, target, value.instruction);
+        applyPop(to, target, value.instruction, cell.dir);
+        internal_memory[instruction.arg1.x].inc(target.dir);
 
-        Log::Inf << " [" << to.x << ":" << to.y << "] <- " << value.instruction.name(this, target);
+        Log::Inf << " [" << to.x << ":" << to.y << "]" << static_cast<int>(target.dir)
+                 << " <- " << value.instruction.name(this, target);
 
         break;
     }
+
+    case Op_GetE:{
+        Coord   vect = internal_memory[instruction.arg2.x];
+        Coord   from = ptr.add(vect);
+        Cell    &source = theWorld->getCell(from);
+
+        Log::Inf << "GETE\t\t (" << instruction.arg1.x << ") <- ("<< instruction.arg2.x << ") "
+                 << vect.x << ":" << vect.y << " [" << from.x << ":" << from.y << "] = " << source.energy;
+
+        simpleDirection = true;
+        considerTheDistance = true;
+
+        if (source.instruction.code != Op_None) {
+            flags |= CRT_FLAG_ERR;
+            internal_memory[instruction.arg1.x].x =  0;
+            internal_memory[instruction.arg1.x].y =  0;
+            Log::Inf << " failed (" << source.instruction.code << ","<< source.executorId << ","<< source.tailId <<  ")";
+        }
+        else {
+            internal_memory[instruction.arg1.x].x =  source.energy;
+            internal_memory[instruction.arg1.x].y =  source.dir;
+        }
+        break;
+    }
+
+    case Op_SetE:{
+        Coord   vect = internal_memory[instruction.arg1.x];
+        Coord   to = ptr.add(vect);
+        int64_t gift = internal_memory[instruction.arg2.x].x;
+        Log::Inf << "SETE\t\t <-(" << instruction.arg1.x << ") " << vect.x << ":" << vect.y << "";
+        Log::Inf << " [" << to.x << ":" << to.y << "] <- (" << instruction.arg2.x << ") = "  << gift;
+        Cell &target = theWorld->getCell(to);
+
+        int64_t cost = instruction.cost(cell, *this, considerTheDistance);
+        considerTheDistance = true;
+        simpleDirection = true;
+
+        if (target.instruction.code != Op_None) {
+            flags |= CRT_FLAG_ERR;
+            Log::Inf << " failed (" << target.instruction.code << ","<< target.executorId << ","<< target.tailId <<  ")";
+            break;
+        }
+
+        if (cost+gift>energy) {
+            flags |= CRT_FLAG_ERR;
+            Log::Inf << " failed (have not enought energy)";
+            break;
+        }
+
+        flags &= (~CRT_FLAG_ERR);
+        target.energy += gift;
+        energy -= gift;
+
+        break;
+    }
+
     case Op_CmpTop: {
-        Log::Inf << "CMPTOP\t " << instruction.arg1.x;
+        Log::Inf << "CMPTOP\t\t " << instruction.arg1.x;
         Cell    value = internal_stack.top();
         if (value.energy < instruction.arg1.x) {
             flags |= CRT_FLAG_LESS;
@@ -383,7 +421,7 @@ void Creature::execInstruction()
 
     case Op_Set:{
         int int_addr = instruction.arg1.x;
-        Log::Inf << "SET\t("  << int_addr << ") <- " << instruction.arg2.x << ":" << instruction.arg2.y;
+        Log::Inf << "SET\t\t("  << int_addr << ") <- " << instruction.arg2.x << ":" << instruction.arg2.y;
         internal_memory[int_addr] = instruction.arg2;
         simpleDirection = true;
         break;
@@ -391,15 +429,48 @@ void Creature::execInstruction()
 
     case Op_Add:{
         int int_addr = instruction.arg1.x;
-        Log::Inf << "ADD\t(" << int_addr << ") += " << instruction.arg2.x << ":" << instruction.arg2.y;
+        Log::Inf << "ADD\t\t(" << int_addr << ") += " << instruction.arg2.x << ":" << instruction.arg2.y;
         internal_memory[int_addr] = internal_memory[int_addr].add_raw(instruction.arg2);
+        setFlags(internal_memory[int_addr].x);
+        simpleDirection = true;
+        break;
+    }
+
+    case Op_Cmp:{
+        int int_addr = instruction.arg1.x;
+        int32_t l1 = internal_memory[int_addr].length();
+        int32_t l2 = instruction.arg2.length();
+        Log::Inf << "CMP\t\t(" << int_addr << ") = " << l1 << " with "<< l2;
+        setFlags(l1-l2);
+        simpleDirection = true;
+        break;
+    }
+
+    case Op_Mov:{
+        int int_addr1 = instruction.arg1.x;
+        int int_addr2 = instruction.arg2.x;
+        Log::Inf << "MOV\t\t(" << int_addr1 << ") <- (" <<  int_addr2 << ")";
+        internal_memory[instruction.arg1.x] = internal_memory[instruction.arg2.x];
+        simpleDirection = true;
+        break;
+    }
+
+    case Op_AddReg:{
+        int int_addr1 = instruction.arg1.x;
+        int int_addr2 = instruction.arg2.x;
+        Coord sum;
+        sum.x = internal_memory[instruction.arg1.x].x + internal_memory[instruction.arg2.x].x;
+        sum.y = internal_memory[instruction.arg1.x].y + internal_memory[instruction.arg2.x].y;
+        internal_memory[instruction.arg1.x] = sum;
+        Log::Inf << "ADD\t\t(" << int_addr1 << ") <- (" <<  int_addr2 << ") = " << sum.x << ":" << sum.y;
+        setFlags(internal_memory[int_addr1].x);
         simpleDirection = true;
         break;
     }
 
     case Op_Rnd:{
         int int_addr = instruction.arg1.x;
-        Log::Inf << "RND\t(" << int_addr << ") += " << instruction.arg2.x << ":" << instruction.arg2.y;
+        Log::Inf << "RND\t\t(" << int_addr << ") += " << instruction.arg2.x << ":" << instruction.arg2.y;
         Coord cRnd(0,0);
         if (instruction.arg2.x) cRnd.x = std::rand()%instruction.arg2.x;
         if (instruction.arg2.y) cRnd.y = std::rand()%instruction.arg2.y;
@@ -408,230 +479,244 @@ void Creature::execInstruction()
         break;
     }
 
+    case Op_Next:{
+        int  int_addr = instruction.arg1.x;
+        int  count = instruction.arg2.x;
+        Coord tptr = ptr;
+        while (count) {
+            Cell &tcell = theWorld->getCell(tptr);
+            internal_memory[int_addr].inc(tcell.dir);
+            tptr.inc(tcell.dir);
+            count --;
+        }
+        Log::Inf << "NEXT\t\t(" << int_addr << ") " << instruction.arg2.x
+                 << " <- " << internal_memory[int_addr].x << ":" << internal_memory[int_addr].y;
+        simpleDirection = true;
+        break;
+    }
+
+    case Op_Prev:{
+        int  int_addr = instruction.arg1.x;
+        int  count = instruction.arg2.x;
+        Coord tptr = ptr;
+        while (count) {
+            Cell &tcell = theWorld->getCell(tptr);
+            internal_memory[int_addr].dec(tcell.dir);
+            tptr.dec(tcell.dir);
+            count --;
+        }
+        Log::Inf << "PREV\t\t(" << int_addr << ") " << instruction.arg2.x
+                 << " <- " << internal_memory[int_addr].x << ":" << internal_memory[int_addr].y;
+        simpleDirection = true;
+        break;
+    }
+
     case Op_Len:{
         int int_addr = instruction.arg1.x;
         internal_memory[int_addr].x = fingerprint.size();
         internal_memory[int_addr].y = fingerprint.size();
-        Log::Inf << "LEN\t(" << int_addr << ") <- " << internal_memory[int_addr].x << ":" << internal_memory[int_addr].y;
+        Log::Inf << "LEN\t\t(" << int_addr << ") <- " << internal_memory[int_addr].x << ":" << internal_memory[int_addr].y;
         simpleDirection = true;
         break;
     }
 
-    case Op_Mark:{
-        points.push(ptr);
-        Log::Inf << "MARK\t " << ptr.x << ":" << ptr.y;
-        simpleDirection = true;
-        break;
-    }
-
-    case Op_Distance:{
-        int int_addr = instruction.arg1.x;
-
-        if (!points.size()) {
-            flags |= CRT_FLAG_ERR;
-            Log::Inf << "DISTANCE\tFailed";
-        }
-        else {
-            Coord storedPtr = points.top();
-            points.pop();
-            flags &= (~CRT_FLAG_ERR);
-            Coord vect = storedPtr.add_raw(-ptr.x, -ptr.y);
-            internal_memory[int_addr] = internal_memory[int_addr].add_raw(vect.x, vect.y);
-            Log::Inf << "DISTANCE (" << int_addr << ") <- "
-                << vect.x << ":" << vect.y << " " << internal_memory[int_addr].x << ":" << internal_memory[int_addr].y;
-        }
-
-        simpleDirection = true;
-        break;
-    }
-
-    case Op_Mov:{
-        int int_addr1 = instruction.arg1.x;
-        int int_addr2 = instruction.arg2.x;
-        Log::Inf << "MOV\t(" << int_addr1 << ") <- (" <<  int_addr2 << ")";
-        internal_memory[instruction.arg1.x] = internal_memory[instruction.arg2.x];
-        simpleDirection = true;
-        break;
-    }
     case Op_Check:{
-        Log::Inf << "CHECK\t(" << instruction.arg1.x << ") " << internal_memory[instruction.arg1.x].x;
-        if (internal_memory[instruction.arg1.x].x) {
-            flags &= (~CRT_FLAG_Z);
-        }
-        else {
-            flags |= CRT_FLAG_Z;
-        }
-        if (internal_memory[instruction.arg1.x].x > 0) {
-            flags |= CRT_FLAG_GREATER;
-            flags &= (~CRT_FLAG_LESS);
-        }
-        else if (internal_memory[instruction.arg1.x].x < 0) {
-            flags |= CRT_FLAG_LESS;
-            flags &= (~CRT_FLAG_GREATER);
-        }
-        else {
-            flags &= (~CRT_FLAG_LESS);
-            flags &= (~CRT_FLAG_GREATER);
-        }
+        Log::Inf << "CHECK\t\t(" << instruction.arg1.x << ") " << internal_memory[instruction.arg1.x].x;
+        Creature::setFlags(internal_memory[instruction.arg1.x].x);
         simpleDirection = true;
         break;
     }
 
-    case Op_JERR: {
+    case Op_Begin: {
+        points.push(ptr);
+        Log::Inf << "BEGIN\t";
+        simpleDirection = true;
+        break;
+    }
+
+    case Op_End: {
+        Log::Inf << "END\t\t";
+        simpleDirection = !jumpToBegin();
+        break;
+    }
+
+    case Op_BreakOnErr: {
+        Log::Inf << "BREAK ON ERR\t";
         if (flags & CRT_FLAG_ERR) {
-            Coord target = ptr.add(instruction.arg1);
-            Log::Inf << "JERR*\t" << instruction.arg1.x << ":" << instruction.arg1.y;
-            Log::Inf << " [" << target.x << ":" << target.y << "]";
-            ptr = target;
-            considerTheDistance = true;
+            jumpToEnd();
         }
         else {
-            Log::Inf << "JERR\t" << instruction.arg1.x << ":" << instruction.arg1.y;
             simpleDirection = true;
         }
         break;
     }
 
-    case Op_JNERR: {
-        Log::Inf << "JNERR\t" << instruction.arg1.x << ":" << instruction.arg1.y;
+    case Op_ContinueOnErr: {
         if (flags & CRT_FLAG_ERR) {
-            simpleDirection = true;
+            Log::Inf << "CONTINUE ON ERR*\t";
+            simpleDirection = !jumpToBegin();
         }
         else {
-            Coord target = ptr.add(instruction.arg1);
-            Log::Inf << " [" << target.x << ":" << target.y << "]";
-            considerTheDistance = true;
-            ptr = target;
+            Log::Inf << "CONTINUE ON ERR\t";
+            simpleDirection = true;
         }
         break;
     }
 
-    case Op_JNZ: {
-        Log::Inf << "JNZ\t" << instruction.arg1.x << ":" << instruction.arg1.y;
-        if (flags & CRT_FLAG_Z) {
-            simpleDirection = true;
-        }
-        else {
-            Coord target = ptr.add(instruction.arg1);
-            Log::Inf << " [" << target.x << ":" << target.y << "]";
-            ptr = target;
-            considerTheDistance = true;
-        }
-        break;
-    }
-    case Op_JZ: {
-        Log::Inf << "JZ\t" << instruction.arg1.x << ":" << instruction.arg1.y;
-        if (flags & CRT_FLAG_Z) {
-            Coord target = ptr.add(instruction.arg1);
-            Log::Inf << " [" << target.x << ":" << target.y << "]";
-            considerTheDistance = true;
-            ptr = target;
-        }
-        else {
-            simpleDirection = true;
-        }
-        break;
-    }
-    case Op_JNG: {
-        Log::Inf << "JNG\t" << instruction.arg1.x << ":" << instruction.arg1.y;
+    case Op_BreakOnG: {
+        Log::Inf << "BREAK ON G\t";
         if (flags & CRT_FLAG_GREATER) {
-            simpleDirection = true;
+            jumpToEnd();
         }
         else {
-            Coord target = ptr.add(instruction.arg1);
-            Log::Inf << " [" << target.x << ":" << target.y << "]";
-            ptr = target;
-            considerTheDistance = true;
+            simpleDirection = true;
         }
         break;
     }
-    case Op_JG: {
-        Log::Inf << "JG\t" << instruction.arg1.x << ":" << instruction.arg1.y;
+
+    case Op_ContinueOnG: {
+        Log::Inf << "CONTINUE ON G\t";
         if (flags & CRT_FLAG_GREATER) {
-            Coord target = ptr.add(instruction.arg1);
-            Log::Inf << " [" << target.x << ":" << target.y << "]";
-            considerTheDistance = true;
-            ptr = target;
+            simpleDirection = !jumpToBegin();
         }
         else {
             simpleDirection = true;
         }
         break;
     }
-    case Op_JNL: {
-        Log::Inf << "JNL\t" << instruction.arg1.x << ":" << instruction.arg1.y;
+
+    case Op_BreakOnL: {
+        Log::Inf << "BREAK ON L\t";
         if (flags & CRT_FLAG_LESS) {
-            simpleDirection = true;
+            jumpToEnd();
         }
         else {
-            Coord target = ptr.add(instruction.arg1);
-            Log::Inf << " [" << target.x << ":" << target.y << "]";
-            ptr = target;
-            considerTheDistance = true;
+            simpleDirection = true;
         }
         break;
     }
-    case Op_JL: {
-        Log::Inf << "JL\t" << instruction.arg1.x << ":" << instruction.arg1.y;
+
+    case Op_ContinueOnL: {
+        Log::Inf << "CONTINUE ON L\t";
         if (flags & CRT_FLAG_LESS) {
-            Coord target = ptr.add(instruction.arg1);
-            Log::Inf << " [" << target.x << ":" << target.y << "]";
-            considerTheDistance = true;
-            ptr = target;
+            simpleDirection = !jumpToBegin();
         }
         else {
             simpleDirection = true;
         }
         break;
     }
-    case Op_JEQ: {
-        Log::Inf << "JEQ\t" << instruction.arg1.x << ":" << instruction.arg1.y;
-        if (flags & (CRT_FLAG_LESS | CRT_FLAG_GREATER)) {
-            simpleDirection = true;
+
+    case Op_BreakOnZ: {
+        if (flags & CRT_FLAG_Z) {
+            Log::Inf << "BREAK ON Z*\t";
+            jumpToEnd();
         }
         else {
-            Coord target = ptr.add(instruction.arg1);
-            Log::Inf << " [" << target.x << ":" << target.y << "]";
-            ptr = target;
-            considerTheDistance = true;
+            Log::Inf << "BREAK ON Z\t";
+            simpleDirection = true;
         }
         break;
     }
-    case Op_JNE: {
-        Log::Inf << "JNE\t" << instruction.arg1.x << ":" << instruction.arg1.y;
-        if (flags & (CRT_FLAG_LESS | CRT_FLAG_GREATER)) {
-            Coord target = ptr.add(instruction.arg1);
-            Log::Inf << " [" << target.x << ":" << target.y << "]";
-            considerTheDistance = true;
-            ptr = target;
+
+    case Op_ContinueOnZ: {
+        Log::Inf << "CONTINUE ON Z\t";
+        if (flags & CRT_FLAG_Z) {
+            simpleDirection = !jumpToBegin();
         }
         else {
             simpleDirection = true;
         }
         break;
     }
-    case Op_JMP: {
-        Coord target = ptr.add(instruction.arg1);
-        Log::Inf << "JMP\t" << instruction.arg1.x << ":" << instruction.arg1.y;
-        Log::Inf << " [" << target.x << ":" << target.y << "]";
-        considerTheDistance = true;
-        ptr = target;
-        break;
-    }
+
     case Op_None: {
         // freeze
-        Log::Inf << "NONE " << instruction.code;
+        Log::Inf << "NONE\t\t" << instruction.code;
         break;
     }
     }
 
     Log::Inf << log4cpp::eol;
 
-    energy -= instruction.cost(this, considerTheDistance);
+    energy -= instruction.cost(cell, *this, considerTheDistance);
 
     if (simpleDirection) {
-        ptr = ptr.next(instruction.dir);
+        ptr = ptr.next(cell.dir);
     }
+}
 
+bool Creature::jumpToBegin()
+{
+    if (!points.size()) {
+        flags |= CRT_FLAG_ERR;
+        Log::Inf << "Failed";
+        return false;
+    }
+    else {
+        Coord nPtr = points.top();
+        points.pop();
+        ptr = nPtr;
+        Log::Inf << "[" << ptr.x << ":" << ptr.y << "]";
+        return true;
+    }
+}
+
+bool Creature::jumpToEnd()
+{
+    Instruction ins;
+    Direction   dir;
+    //Log::Inf << log4cpp::eol;
+
+    do {
+        ins = World::getInstance()->getCell(ptr).instruction;
+        dir = World::getInstance()->getCell(ptr).dir;
+        //Log::Inf << "CRT " << Id << " [" << ptr.x << ":" << ptr.y << "] " << static_cast<int>(dir);
+        //Log::Inf << log4cpp::eol;
+        ptr = ptr.next(dir);
+    }
+    while (!ins.is(Op_End));
+
+    if (points.size()) {
+        points.pop();
+    }
+    return true;
+}
+
+void Creature::moveBy(int32_t steps)
+{
+    if (steps<0) {
+        int32_t cnt = -steps;
+        while (cnt--) {
+            Cell &tcell = World::getInstance()->getCell(ptr);
+            ptr.dec(tcell.dir);
+        }
+    }
+    else  if (steps>0) {
+        int32_t cnt = steps;
+        while (cnt--) {
+            Cell &tcell = World::getInstance()->getCell(ptr);
+            ptr.inc(tcell.dir);
+        }
+    }
+}
+
+void Creature::setFlags(int32_t value)
+{
+    if (value > 0) {
+        flags &= (~CRT_FLAG_Z);
+        flags |= CRT_FLAG_GREATER;
+        flags &= (~CRT_FLAG_LESS);
+    }
+    else if (value < 0) {
+        flags &= (~CRT_FLAG_Z);
+        flags |= CRT_FLAG_LESS;
+        flags &= (~CRT_FLAG_GREATER);
+    }
+    else {
+        flags |= CRT_FLAG_Z;
+        flags &= (~CRT_FLAG_LESS);
+        flags &= (~CRT_FLAG_GREATER);
+    }
 }
 

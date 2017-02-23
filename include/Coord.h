@@ -29,6 +29,12 @@ public:
     bool operator==(const Coord& src);
 
     unsigned length();
+
+    void inc(Direction dir);
+    void dec(Direction dir);
+
+    void moveBy(Coord &vector);
+
 };
 
 #endif
