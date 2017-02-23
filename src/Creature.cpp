@@ -71,31 +71,30 @@ void Creature::applyPop(Coord &targetCoord, Cell &target, Instruction &value, co
     World *theWorld = World::getInstance();
     Direction tgt_dir = src_dir;
 
-    // мутация-удаление
+    //  mutation: deletion
     do {
-        // частота мутаций относительно количества выполненных инструкций
         if (std::rand()%MUTATIONS_LEVEL_DELETE != 0 || MUTATIONS_OFF || m_flag) {
             break;
         }
 
-        // пока только пустышки
-        if (value.code == Op_Nop) {
-
-            m_flag = true;
-
-            // корректируем указатель на цель, чтобы дальнейшее копирование выполнялось корректно
-            Cell  &cell = theWorld->getCell(ptr);
-            Coord &vect = internal_memory[cell.instruction.arg1.x];
-            vect = vect.prev(src_dir);
-
-            Coord to = ptr.add(vect);
-            Log::Not << "CRT " << Id << " <<Op deleted in [" << to.x << ":" << to.y << "]" << log4cpp::eol;
-            return;
+        // remove only Nop's
+        if (!value.is(Op_Nop)) {
+            break;
         }
+
+        // корректируем указатель на цель, чтобы дальнейшее копирование выполнялось корректно
+        Cell  &cell = theWorld->getCell(ptr);
+        Coord &vect = internal_memory[cell.instruction.arg1.x];
+        vect = vect.prev(src_dir);
+        m_flag = true;
+
+        Coord to = ptr.add(vect);
+        Log::Not << "CRT " << Id << " <<Op deleted in [" << to.x << ":" << to.y << "]" << log4cpp::eol;
+        return;
 
     } while (0);
 
-    // мутация-смена направления выполнения кода
+    // mutation: direction shift
     do {
         if (std::rand()%MUTATIONS_LEVEL_DIRECTION != 0  || MUTATIONS_OFF || m_flag) {
             break;
@@ -122,7 +121,7 @@ void Creature::applyPop(Coord &targetCoord, Cell &target, Instruction &value, co
     while (1);
 
 
-    // копирование операции
+    // instruction copying
     target.instruction = value;
     target.tailId = Id;
     target.executorId = 0;
@@ -130,7 +129,7 @@ void Creature::applyPop(Coord &targetCoord, Cell &target, Instruction &value, co
     embrion.push_back(theWorld->cellIdx(targetCoord.x, targetCoord.y));
     OpOptions opt = value.options();
 
-    // мутация-корректировка констант
+    // mutation: constant correction
     do {
         break;
 
@@ -151,16 +150,11 @@ void Creature::applyPop(Coord &targetCoord, Cell &target, Instruction &value, co
     }
     while (1);
 
-    // мутация-добавление
+    //  mutation: insert instruction
     do {
-        // частота мутаций относительно количества выполненных инструкций
-
         if (std::rand()%MUTATIONS_LEVEL_INSERT != 0 || MUTATIONS_OFF || m_flag) {
             break;
         }
-
-        // insert one instruction after current
-        m_flag = true;
 
         // корректируем указатель на цель, чтобы дальнейшее копирование выполнялось корректно
         Cell  &cell = theWorld->getCell(ptr);
@@ -176,6 +170,7 @@ void Creature::applyPop(Coord &targetCoord, Cell &target, Instruction &value, co
         targetCell.executorId = 0;
         targetCell.dir = tgt_dir;
         embrion.push_back(theWorld->cellIdx(to.x, to.y));
+        m_flag = true;
 
         Log::Not << "CRT " << Id << " <<Nop inserted into [" << to.x << ":" << to.y << "]>>" << log4cpp::eol;
 

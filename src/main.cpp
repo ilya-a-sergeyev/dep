@@ -4,7 +4,7 @@
 #include "World.h"
 
 Model Adam;
-Model Eva;
+Model Eve;
 //Model SmartAss;
 
 void Edem();
@@ -30,7 +30,7 @@ int main(int ac, char *av[])
 
     Edem();
     theWorld->LoadCreature({10,10}, Adam, 15000);
-    theWorld->LoadCreature({50,10}, Eva, 15000);
+    theWorld->LoadCreature({50,10}, Eve, 15000);
     //theWorld->LoadCreature({50,10}, SmartAss, 15000);
     theWorld->run(counter);
 
@@ -54,56 +54,58 @@ void Edem()
     // New generation
     Adam.resize(18);
 
-    Adam[ 0] = { Forward, Instruction(Op_Begin)};
+    Adam[ 0] = { Forward, Instruction(Op_Begin)}; // (*)
     Adam[ 1] = { Forward, Instruction(Op_Reset)};
-    // get the target start point
+    // get the target start point into (4) - random(10)+1
+    // - will be used in "Pop" instruction
     Adam[ 2] = { Forward, Instruction(Op_Rnd,      { 4, 0 }, {  0, 10 } ) };
     Adam[ 3] = { Forward, Instruction(Op_Add,      { 4, 0 }, {  0,  1 } ) };
+    // store start point into (3) for start instruction
     Adam[ 4] = { Forward, Instruction(Op_Mov,      { 3, 0 }, {  4,  0 } ) };
-    // copy loop counter
+    // (2) - copy loop counter
     Adam[ 5] = { Forward, Instruction(Op_Len,      { 2, 0 } ) };
-    // get the source start point
+    // get the source start point into (0) - will be used in "Push" instruction
     Adam[ 6] = { Forward, Instruction(Op_Set,      { 0, 0 }, { 0, 0 } ) };
     // body copy loop
     Adam[ 7] = { Forward, Instruction(Op_Begin)};
     Adam[ 8] = { Forward, Instruction(Op_Check,    { 2, 0 } ) };
     Adam[ 9] = { Forward, Instruction(Op_BreakOnZ)};
-    Adam[10] = { Forward, Instruction(Op_Push,     { 0, 0 }, { 1, 0 }) };
-    Adam[11] = { Forward, Instruction(Op_Pop,      { 4, 0 }, { 1, 0 }) };
+    Adam[10] = { Forward, Instruction(Op_Push,     { 0, 0 }, { 1, 0 }) }; // second operand = 1
+    Adam[11] = { Forward, Instruction(Op_Pop,      { 4, 0 }, { 1, 0 }) }; // it means relative to the first "Begin" (*)
     Adam[12] = { Forward, Instruction(Op_BreakOnErr)};
     Adam[13] = { Forward, Instruction(Op_Add,      { 2, 0 }, { -1, 0 } ) };
     Adam[14] = { Forward, Instruction(Op_End)};
-    // copy loop end
+    // restart if copying failed
     Adam[15] = { Forward, Instruction(Op_ContinueOnErr)};
     // start the child
     Adam[16] = { Forward, Instruction(Op_Start,    { 3, 0 }, { 0, 0 } ) };
     Adam[17] = { Forward, Instruction(Op_End) };
 
-    Eva.resize(18);
+    Eve.resize(18);
 
-    Eva[ 0] = { Right, Instruction(Op_Begin)};
-    Eva[ 1] = { Right, Instruction(Op_Reset)};
+    Eve[ 0] = { Right, Instruction(Op_Begin)};
+    Eve[ 1] = { Right, Instruction(Op_Reset)};
     // get the target start point
-    Eva[ 2] = { Right, Instruction(Op_Rnd,      { 4, 0 }, { 10,  0 } ) };
-    Eva[ 3] = { Right, Instruction(Op_Add,      { 4, 0 }, {  1,  0 } ) };
-    Eva[ 4] = { Right, Instruction(Op_Mov,      { 3, 0 }, {  4,  0 } ) };
+    Eve[ 2] = { Right, Instruction(Op_Rnd,      { 4, 0 }, { 10,  0 } ) };
+    Eve[ 3] = { Right, Instruction(Op_Add,      { 4, 0 }, {  1,  0 } ) };
+    Eve[ 4] = { Right, Instruction(Op_Mov,      { 3, 0 }, {  4,  0 } ) };
     // copy loop counter
-    Eva[ 5] = { Right, Instruction(Op_Len,      { 2, 0 } ) };
+    Eve[ 5] = { Right, Instruction(Op_Len,      { 2, 0 } ) };
     // get the source start point
-    Eva[ 6] = { Right, Instruction(Op_Set,      { 0, 0 }, { 0, 0 } ) };
+    Eve[ 6] = { Right, Instruction(Op_Set,      { 0, 0 }, { 0, 0 } ) };
     // body copy loop
-    Eva[ 7] = { Right, Instruction(Op_Begin)};
-    Eva[ 8] = { Right, Instruction(Op_Check,    { 2, 0 } ) };
-    Eva[ 9] = { Right, Instruction(Op_BreakOnZ)};
-    Eva[10] = { Right, Instruction(Op_Push,     { 0, 0 }, { 1, 0 }) };
-    Eva[11] = { Right, Instruction(Op_Pop,      { 4, 0 }, { 1, 0 }) };
-    Eva[12] = { Right, Instruction(Op_BreakOnErr)};
-    Eva[13] = { Right, Instruction(Op_Add,      { 2, 0 }, { -1, 0 } ) };
-    Eva[14] = { Right, Instruction(Op_End)};
-    // copy loop end
-    Eva[15] = { Right, Instruction(Op_ContinueOnErr)};
+    Eve[ 7] = { Right, Instruction(Op_Begin)};
+    Eve[ 8] = { Right, Instruction(Op_Check,    { 2, 0 } ) };
+    Eve[ 9] = { Right, Instruction(Op_BreakOnZ)};
+    Eve[10] = { Right, Instruction(Op_Push,     { 0, 0 }, { 1, 0 }) };
+    Eve[11] = { Right, Instruction(Op_Pop,      { 4, 0 }, { 1, 0 }) };
+    Eve[12] = { Right, Instruction(Op_BreakOnErr)};
+    Eve[13] = { Right, Instruction(Op_Add,      { 2, 0 }, { -1, 0 } ) };
+    Eve[14] = { Right, Instruction(Op_End)};
+    // restart if copying failed
+    Eve[15] = { Right, Instruction(Op_ContinueOnErr)};
     // start the child
-    Eva[16] = { Right, Instruction(Op_Start,    { 3, 0 }, { 0, 0 } ) };
-    Eva[17] = { Right, Instruction(Op_End) };
+    Eve[16] = { Right, Instruction(Op_Start,    { 3, 0 }, { 0, 0 } ) };
+    Eve[17] = { Right, Instruction(Op_End) };
 }
 
