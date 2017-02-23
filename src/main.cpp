@@ -108,4 +108,29 @@ void Edem()
     Eve[16] = { Right, Instruction(Op_Start,    { 3, 0 }, { 0, 0 } ) };
     Eve[17] = { Right, Instruction(Op_End) };
 }
+/*
+    // store start point
+    Eve[ 6] = { Right, Instruction(Op_Mov,      { 6, 0 }, {  4, 0 }) };
 
+     // E sum
+    Eve[ 6] = { Right, Instruction(Op_Set,      { 5, 0 }, {  0, 0 }) };
+
+    // target place energy check loop
+    Eve[ 7] = { Right, Instruction(Op_Begin)};
+    Eve[ 8] = { Right, Instruction(Op_Check,    { 2, 0 } ) };
+    Eve[ 9] = { Right, Instruction(Op_BreakOnZ)};
+    Eve[10] = { Right, Instruction(Op_GetE,     { 1, 0 }, {  4, 0 }) }; // stack level?
+    Eve[12] = { Right, Instruction(Op_BreakOnErr)};
+    Eve[10] = { Right, Instruction(Op_AddReg,   { 5, 0 }, {  1, 0 }) };
+    Eve[13] = { Right, Instruction(Op_Add,      { 2, 0 }, { -1, 0 }) };
+    Eve[14] = { Right, Instruction(Op_End)};
+
+    // unseccessfull check -> repeat from begin
+    Eve[15] = { Right, Instruction(Op_ContinueOnErr)};
+    Eve[15] = { Right, Instruction(Op_Cmp,   { 5, 0 }, {  30*INIT_CELL_ENERGY, 0 }) };
+    Eve[15] = { Right, Instruction(Op_ContinueOnL)};
+
+    // restore successfull target start point
+    Eve[ 6] = { Right, Instruction(Op_Mov,      { 4, 0 }, {  6, 0 }) };
+
+*/
