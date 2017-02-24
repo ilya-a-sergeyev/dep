@@ -22,7 +22,7 @@ file(GLOB_RECURSE data resources/*)
 add_executable(dep ${sources} ${data})
 
 # just for dep add some compiler flags
-target_compile_options(dep PUBLIC -std=c++11 -g -O2 -Wall -Wfloat-conversion -Wno-deprecated)
+target_compile_options(dep PUBLIC -std=c++14 -g -O2 -Wall -Wfloat-conversion -Wno-deprecated)
 
 # this lets me include files relative to the root src dir with a <> pair
 target_include_directories(dep PUBLIC src include)

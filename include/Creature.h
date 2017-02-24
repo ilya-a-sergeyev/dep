@@ -4,6 +4,7 @@
 #include <stack>
 #include <vector>
 #include <atomic>
+#include <random>
 
 #include "Defs.h"
 #include "Coord.h"

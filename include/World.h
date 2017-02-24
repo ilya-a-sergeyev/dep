@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <list>
+#include <random>
 
 #include "Defs.h"
 #include "Coord.h"
@@ -10,6 +11,7 @@
 #include "Creature.h"
 #include "Cell.h"
 #include "Log.h"
+#include "Mutator.h"
 
 struct ModelCell {
     Direction   dir;
@@ -52,6 +54,5 @@ private:
     static World *instance;
     World(int32_t size);
 };
-
 
 #endif

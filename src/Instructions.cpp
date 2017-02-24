@@ -15,8 +15,8 @@ void Instruction::prepare_instructions()
     Instruction::opOptions[Op_Push ] =  {ENERGY_COST_SENSOR,         1, Ot_IntMemoryPtr,      Ot_ConstantVector};
     Instruction::opOptions[Op_Pop  ] =  {ENERGY_COST_MODIFICATOR,    2, Ot_IntMemoryPtr,      Ot_ConstantVector};
 
-    Instruction::opOptions[Op_GetE  ] =  {ENERGY_COST_SENSOR,        1, Ot_IntMemory,         Ot_IntMemoryPtr};
-    Instruction::opOptions[Op_SetE  ] =  {ENERGY_COST_MODIFICATOR,   1, Ot_IntMemoryPtr,      Ot_IntMemory};
+    Instruction::opOptions[Op_GetE  ] =  {ENERGY_COST_SENSOR,        1, Ot_IntMemory,         Ot_None};
+    Instruction::opOptions[Op_SetE  ] =  {ENERGY_COST_MODIFICATOR,   1, Ot_IntMemory,         Ot_None};
 
     // операнд - константа не связанная с внешним миром
     Instruction::opOptions[Op_CmpTop] =  {ENERGY_COST_INTERNAL,      0, Ot_IntMemory,         Ot_None};

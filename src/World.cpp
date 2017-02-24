@@ -4,11 +4,11 @@
 #include <iostream>
 #include <stack>
 #include <algorithm>
+#include <random>
 
 #include <sys/time.h>
 
 #include "World.h"
-
 
 static unsigned long time_msec();
 
@@ -38,6 +38,10 @@ World::World(int32_t size)
 {
     Log::Not << "Hello!" << log4cpp::eol;
 
+    std::random_device _rd;
+    std::mt19937 _gen(_rd());
+    std::uniform_int_distribution<> _dis(0, 3);
+
     // кое-какие инициализации
     Instruction::prepare_instructions();
 
@@ -45,10 +49,8 @@ World::World(int32_t size)
     soup.reserve(worldSize*worldSize);
     for (int i=0; i<worldSize*worldSize; i++) {
         soup[i].clear();
-        soup[i].dir = static_cast<Direction>(std::rand()%4);
+        soup[i].dir = static_cast<Direction>(_dis(_gen));
     }
-
-    std::srand(unsigned(std::time(0)));
 
     Log::Not << worldSize << "x" << worldSize << " toroidal world allocated" << log4cpp::eol;
 }

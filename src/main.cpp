@@ -5,7 +5,7 @@
 
 Model Adam;
 Model Eve;
-//Model SmartAss;
+Model SmartAss;
 
 void Edem();
 
@@ -26,23 +26,22 @@ int main(int ac, char *av[])
     //return 0;
 
     Log *theLogger = Log::getInstance();
+    Mutator *theMutator = Mutator::getInstance();
     World *theWorld = World::getInstance();
 
     Edem();
     theWorld->LoadCreature({10,10}, Adam, 15000);
     theWorld->LoadCreature({50,10}, Eve, 15000);
-    //theWorld->LoadCreature({50,10}, SmartAss, 15000);
+    theWorld->LoadCreature({10,20}, SmartAss, 15000);
     theWorld->run(counter);
 
-    /*
-    Coord x(95,5);
-    Coord y=x.add(-10,0);
-    std::cout << y.x << ":" << y.y << "\n";
-    y=x.add(0,-10);
-    std::cout << y.x << ":" << y.y << "\n";
-    y=x.add(-10,-10);
-    std::cout << y.x << ":" << y.y << "\n";
-    */
+    //Coord x(95,5);
+    //Coord y=x.add(-10,0);
+    //std::cout << y.x << ":" << y.y << "\n";
+    //y=x.add(0,-10);
+    //std::cout << y.x << ":" << y.y << "\n";
+    //y=x.add(-10,-10);
+    //std::cout << y.x << ":" << y.y << "\n";
 
     delete theWorld;
     delete theLogger;
@@ -107,30 +106,62 @@ void Edem()
     // start the child
     Eve[16] = { Right, Instruction(Op_Start,    { 3, 0 }, { 0, 0 } ) };
     Eve[17] = { Right, Instruction(Op_End) };
-}
-/*
+
+
+    SmartAss.resize(35);
+
+    SmartAss[ 0] = { Right, Instruction(Op_Begin)};
+    SmartAss[ 1] = { Right, Instruction(Op_Reset)};
+    // get the target start point
+    SmartAss[ 2] = { Right, Instruction(Op_Rnd,      { 4, 0 }, { 10,  0 } ) };
+    SmartAss[ 3] = { Right, Instruction(Op_Add,      { 4, 0 }, {  1,  0 } ) };
+    SmartAss[ 4] = { Right, Instruction(Op_Mov,      { 3, 0 }, {  4,  0 } ) };
+    // copy loop counter
+    SmartAss[ 5] = { Right, Instruction(Op_Len,      { 2, 0 } ) };
+
     // store start point
-    Eve[ 6] = { Right, Instruction(Op_Mov,      { 6, 0 }, {  4, 0 }) };
+    SmartAss[ 6] = { Right, Instruction(Op_Mov,      { 6, 0 }, {  4, 0 }) };
 
-     // E sum
-    Eve[ 6] = { Right, Instruction(Op_Set,      { 5, 0 }, {  0, 0 }) };
+    // breeding area analyse block - receives the amount of energy of the breeding area
 
+    SmartAss[ 7] = { Right, Instruction(Op_Set,      { 5, 0 }, {  0, 0 }) };  // E sum
     // target place energy check loop
-    Eve[ 7] = { Right, Instruction(Op_Begin)};
-    Eve[ 8] = { Right, Instruction(Op_Check,    { 2, 0 } ) };
-    Eve[ 9] = { Right, Instruction(Op_BreakOnZ)};
-    Eve[10] = { Right, Instruction(Op_GetE,     { 1, 0 }, {  4, 0 }) }; // stack level?
-    Eve[12] = { Right, Instruction(Op_BreakOnErr)};
-    Eve[10] = { Right, Instruction(Op_AddReg,   { 5, 0 }, {  1, 0 }) };
-    Eve[13] = { Right, Instruction(Op_Add,      { 2, 0 }, { -1, 0 }) };
-    Eve[14] = { Right, Instruction(Op_End)};
+    SmartAss[ 8] = { Right, Instruction(Op_Begin)};
+    SmartAss[ 9] = { Right, Instruction(Op_Check,    { 2, 0 } ) };
+    SmartAss[10] = { Right, Instruction(Op_BreakOnZ)};
+    SmartAss[11] = { Right, Instruction(Op_Push,     { 4, 0 }, { 1,  0 }) };  // memory -> stack
+    SmartAss[12] = { Right, Instruction(Op_GetE,     { 1, 0 }) };             // stack -> register (x = energy)
+    SmartAss[13] = { Right, Instruction(Op_Pop,      { 4, 0 }, { -1, 0 }) };  // -1 means Pop without writing to cell
+    SmartAss[14] = { Right, Instruction(Op_BreakOnErr)};
+    SmartAss[15] = { Right, Instruction(Op_AddReg,   { 5, 0 }, {  1, 0 }) };
+    SmartAss[16] = { Right, Instruction(Op_Add,      { 2, 0 }, { -1, 0 }) };
+    SmartAss[17] = { Right, Instruction(Op_End)};
 
     // unseccessfull check -> repeat from begin
-    Eve[15] = { Right, Instruction(Op_ContinueOnErr)};
-    Eve[15] = { Right, Instruction(Op_Cmp,   { 5, 0 }, {  30*INIT_CELL_ENERGY, 0 }) };
-    Eve[15] = { Right, Instruction(Op_ContinueOnL)};
+    SmartAss[18] = { Right, Instruction(Op_ContinueOnErr)};
+    SmartAss[19] = { Right, Instruction(Op_Cmp,   { 5, 0 }, {  30*INIT_CELL_ENERGY, 0 }) };
+    SmartAss[20] = { Right, Instruction(Op_ContinueOnL)};
 
     // restore successfull target start point
-    Eve[ 6] = { Right, Instruction(Op_Mov,      { 4, 0 }, {  6, 0 }) };
+    SmartAss[21] = { Right, Instruction(Op_Mov,      { 4, 0 }, {  6, 0 }) };
+    SmartAss[22] = { Right, Instruction(Op_Len,      { 2, 0 } ) };
 
-*/
+    // get the source start point
+    SmartAss[23] = { Right, Instruction(Op_Set,      { 0, 0 }, { 0, 0 } ) };
+    // body copy loop
+    SmartAss[24] = { Right, Instruction(Op_Begin)};
+    SmartAss[25] = { Right, Instruction(Op_Check,    { 2, 0 } ) };
+    SmartAss[26] = { Right, Instruction(Op_BreakOnZ)};
+    SmartAss[27] = { Right, Instruction(Op_Push,     { 0, 0 }, { 1, 0 }) };
+    SmartAss[28] = { Right, Instruction(Op_Pop,      { 4, 0 }, { 1, 0 }) };
+    SmartAss[29] = { Right, Instruction(Op_BreakOnErr)};
+    SmartAss[30] = { Right, Instruction(Op_Add,      { 2, 0 }, { -1, 0 } ) };
+    SmartAss[31] = { Right, Instruction(Op_End)};
+    // restart if copying failed
+    SmartAss[32] = { Right, Instruction(Op_ContinueOnErr)};
+    // start the child
+    SmartAss[33] = { Right, Instruction(Op_Start,    { 3, 0 }, { 0, 0 } ) };
+    SmartAss[34] = { Right, Instruction(Op_End) };
+}
+
+

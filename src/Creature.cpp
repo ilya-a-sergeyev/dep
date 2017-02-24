@@ -61,8 +61,6 @@ void Creature::doAbort()
     }
 }
 
-#define MUTATIONS_OFF 0
-
 //
 // Place of mutations
 //
@@ -73,7 +71,7 @@ void Creature::applyPop(Coord &targetCoord, Cell &target, Instruction &value, co
 
     //  mutation: deletion
     do {
-        if (std::rand()%MUTATIONS_LEVEL_DELETE != 0 || MUTATIONS_OFF || m_flag) {
+        if (Mutator::getInstance()->chanceToBeRemoved() || m_flag) {
             break;
         }
 
@@ -96,9 +94,10 @@ void Creature::applyPop(Coord &targetCoord, Cell &target, Instruction &value, co
 
     // mutation: direction shift
     do {
-        if (std::rand()%MUTATIONS_LEVEL_DIRECTION != 0  || MUTATIONS_OFF || m_flag) {
+        if (Mutator::getInstance()->chanceToBeRedirected() || m_flag) {
             break;
         }
+
         switch (src_dir) {
         case Forward:
             tgt_dir = Right;
@@ -124,23 +123,18 @@ void Creature::applyPop(Coord &targetCoord, Cell &target, Instruction &value, co
     do {
         break;
 
-        if (std::rand()%MUTATIONS_LEVEL_CONSTANT != 0  || MUTATIONS_OFF || m_flag) {
+        if (Mutator::getInstance()->chanceToConstantChanged() || m_flag) {
             break;
         }
 
         OpOptions opt = value.options();
 
-        if (opt.sourceOpType == Ot_ConstantVector) {
-            Coord delta;
-            if (value.arg2.x) {
-                delta.x = std::rand()%MUTATIONS_CONSTANT_MAXD;
-            }
-            if (value.arg2.y) {
-                delta.y = std::rand()%MUTATIONS_CONSTANT_MAXD;
-            }
-            value.arg2 = value.arg2.add_raw(delta);
-            m_flag = true;
+        if (opt.sourceOpType != Ot_ConstantVector) {
+            break;
         }
+
+        Mutator::getInstance()->mutateVector(value.arg2);
+        m_flag = true;
     }
     while (0);
 
@@ -153,7 +147,7 @@ void Creature::applyPop(Coord &targetCoord, Cell &target, Instruction &value, co
 
     //  mutation: insert instruction
     do {
-        if (std::rand()%MUTATIONS_LEVEL_INSERT != 0 || MUTATIONS_OFF || m_flag) {
+        if (Mutator::getInstance()->chanceToNopInserted() || m_flag) {
             break;
         }
 
@@ -174,8 +168,6 @@ void Creature::applyPop(Coord &targetCoord, Cell &target, Instruction &value, co
         m_flag = true;
 
         Log::Not << "CRT " << Id << " <<Nop inserted into [" << to.x << ":" << to.y << "]>>" << log4cpp::eol;
-
-        return;
 
     } while (0);
 
@@ -294,9 +286,28 @@ void Creature::execInstruction()
         break;
     }
     case Op_Pop:{
-        Coord   vect = internal_memory[instruction.arg1.x];
         int     idx = instruction.arg2.x;
-        Log::Inf << "POP\t\t -> (" << instruction.arg1.x << ") " << vect.x << ":" << vect.y << "";
+        Log::Inf << "POP\t\t -> (" << instruction.arg1.x << ") ";
+
+        simpleDirection = true;
+
+        if (!internal_stack.size()) {
+            flags |= CRT_FLAG_ERR;
+            Log::Inf << "failed (stack is empty)";
+            break;
+        }
+
+        Cell    value = internal_stack.top();
+        internal_stack.pop();
+
+        // withouit writing to target cell
+        if (idx<0) {
+            flags &= (~CRT_FLAG_ERR);
+            break;
+        }
+
+        Coord   vect = internal_memory[instruction.arg1.x];
+        Log::Inf << vect.x << ":" << vect.y;
 
         if (points.size()<idx+1) {
             flags |= CRT_FLAG_ERR;
@@ -305,18 +316,8 @@ void Creature::execInstruction()
         }
         Coord base = points[idx];
         Coord to = base.add(vect);
-
-        simpleDirection = true;
         considerTheDistance = true;
 
-        if (!internal_stack.size()) {
-            flags |= CRT_FLAG_ERR;
-            Log::Inf << " [" << to.x << ":" << to.y << "] failed (stack is empty)";
-            break;
-        }
-
-        Cell    value = internal_stack.top();
-        internal_stack.pop();
         Cell &target = theWorld->getCell(to);
 
         // ToDo: тут еще думать и думать над условиями возможности/невозможности
@@ -342,74 +343,46 @@ void Creature::execInstruction()
     }
 
     case Op_GetE:{
-        Log::Inf << "GETE\t\t (" << instruction.arg1.x << ") <- ("<< instruction.arg2.x << ") ";
 
+        Log::Inf << "GETE\t\t";
         simpleDirection = true;
-        Coord   vect = internal_memory[instruction.arg2.x];
 
-        if (!points.size()) {
+        if (!internal_stack.size()) {
             flags |= CRT_FLAG_ERR;
-            Log::Inf << " failed (call stack size)";
+            Log::Inf << "failed (stack is empty)";
             break;
         }
-        Coord base = points[0];
 
-        Coord   from = base.add(vect);
-        Cell    &source = theWorld->getCell(from);
+        Log::Inf << "(" << instruction.arg1.x << ") <- "<< internal_stack.top().energy;
 
-        Log::Inf << vect.x << ":" << vect.y << " [" << from.x << ":" << from.y << "] = " << source.energy;
+        internal_memory[instruction.arg1.x].x =  internal_stack.top().energy;
+        internal_memory[instruction.arg1.x].y =  0;
 
-        considerTheDistance = true;
-
-        if (source.instruction.code != Op_None) {
-            flags |= CRT_FLAG_ERR;
-            internal_memory[instruction.arg1.x].x =  0;
-            internal_memory[instruction.arg1.x].y =  0;
-            Log::Inf << " failed (" << source.instruction.code << ","<< source.executorId << ","<< source.tailId <<  ")";
-        }
-        else {
-            internal_memory[instruction.arg1.x].x =  source.energy;
-            internal_memory[instruction.arg1.x].y =  source.dir;
-        }
         break;
     }
 
     case Op_SetE:{
-        Log::Inf << "SETE\t\t (" << instruction.arg1.x << ") <- ("<< instruction.arg2.x << ") ";
 
+        Log::Inf << "SETE\t\t";
         simpleDirection = true;
-        Coord   vect = internal_memory[instruction.arg1.x];
 
-        if (!points.size()) {
+        if (!internal_stack.size()) {
             flags |= CRT_FLAG_ERR;
-            Log::Inf << " failed (call stack size)";
-            break;
-        }
-        Coord base = points[0];
-
-        Coord to = base.add(vect);
-
-        int64_t gift = internal_memory[instruction.arg2.x].x;
-        Log::Inf << vect.x << ":" << vect.y << " [" << to.x << ":" << to.y << "] <- "  << gift;
-        Cell &target = theWorld->getCell(to);
-
-        int64_t cost = instruction.cost(cell, *this, considerTheDistance);
-        considerTheDistance = true;
-
-        if (target.instruction.code != Op_None) {
-            flags |= CRT_FLAG_ERR;
-            Log::Inf << " failed (" << target.instruction.code << ","<< target.executorId << ","<< target.tailId <<  ")";
+            Log::Inf << "failed (stack is empty)";
             break;
         }
 
-        if (cost+gift>energy) {
+        uint64_t gift = internal_memory[instruction.arg1.x].x;
+
+        if (gift>energy) {
             flags |= CRT_FLAG_ERR;
             Log::Inf << " failed (have not enought energy)";
             break;
         }
 
-        flags &= (~CRT_FLAG_ERR);
-        target.energy += gift;
+        Log::Inf << "(" << instruction.arg1.x << ") -> "<< gift;
+
+        internal_stack.top().energy = gift;
         energy -= gift;
 
         break;
@@ -486,10 +459,7 @@ void Creature::execInstruction()
     case Op_Rnd:{
         int int_addr = instruction.arg1.x;
         Log::Inf << "RND\t\t(" << int_addr << ") += " << instruction.arg2.x << ":" << instruction.arg2.y;
-        Coord cRnd(0,0);
-        if (instruction.arg2.x) cRnd.x = std::rand()%instruction.arg2.x;
-        if (instruction.arg2.y) cRnd.y = std::rand()%instruction.arg2.y;
-        internal_memory[int_addr] = cRnd;
+        internal_memory[int_addr] = Mutator::getInstance()->randomVector(instruction.arg2);
         simpleDirection = true;
         break;
     }
@@ -690,7 +660,7 @@ bool Creature::jumpToEnd()
         //Log::Inf << log4cpp::eol;
         ptr = ptr.next(dir);
     }
-    while (!ins.is(Op_End));
+    while (!ins.is(Op_End) && !ins.is(Op_None));
 
     if (points.size()) {
         points.pop();
