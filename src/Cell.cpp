@@ -38,6 +38,7 @@ Cell::Cell(const Cell &src)
     executorId = 0;
 }
 
+/*
 Cell::Cell(Cell &&src)
 {
     instruction = src.instruction;
@@ -45,6 +46,7 @@ Cell::Cell(Cell &&src)
     tailId = 0;
     executorId = 0;
 }
+*/
 
 // We must not change the direction!
 void Cell::clear()

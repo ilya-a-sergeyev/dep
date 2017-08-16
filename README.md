@@ -1,5 +1,7 @@
 Digital Evolution Platform
 
+log4cpp http://log4cpp.sourceforge.net/
+
 ```
 #!bash
 mkdir build

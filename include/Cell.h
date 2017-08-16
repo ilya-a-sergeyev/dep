@@ -14,7 +14,7 @@ public:
 	
     Cell();
     Cell(const Cell &src);
-    Cell(Cell &&src);
+    //Cell(Cell &&src);
     Cell& operator=(const Cell& src);
 
     void clear();
